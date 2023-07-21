@@ -8,16 +8,25 @@
 	let isAvailable: boolean = false;
 	let debounceTimer: NodeJS.Timeout;
 
+	const re = /^(?=[a-zA-Z0-9._]{3,16}$)(?!.*[_.]{2})[^_.].*[^_.]$/;
+
+	$: isValid = username?.length > 2 && username.length < 17 && re.test(username);
+	$: isTouched = username.length > 0;
+	$: isTaken = isValid && !isAvailable && !loading;
+
 	const checkAvailability = async () => {
 		loading = true;
 		isAvailable = false;
 		clearTimeout(debounceTimer);
 
 		debounceTimer = setTimeout(async () => {
-			const ref = doc(db, "usernames", username);
-			const exists = await getDoc(ref).then((doc) => doc.exists());
+			if (username) {
+				const ref = doc(db, "usernames", username);
+				const exists = await getDoc(ref).then((doc) => doc.exists());
 
-			isAvailable = !exists;
+				isAvailable = !exists;
+			}
+
 			loading = false;
 		}, 500);
 	};
@@ -25,7 +34,7 @@
 	const confirmUsername = async () => {
 		const batch = writeBatch(db);
 
-		batch.set(doc(db, "usernames", username), {uid: $user?.uid});
+		batch.set(doc(db, "usernames", username), { uid: $user?.uid });
 		batch.set(doc(db, "users", $user!.uid), {
 			username,
 			photoURL: $user?.photoURL ?? null,
@@ -48,13 +57,36 @@
 </script>
 
 <AuthCheck>
-	<h2>Username</h2>
-
 	<form class="w-2/5" on:submit|preventDefault={confirmUsername}>
-		<input type="text" placeholder="Username" class="w-full input" bind:value={username} on:input={checkAvailability} />
+		<input
+			type="text"
+			placeholder="Username"
+			class="w-full input"
+			bind:value={username}
+			on:input={checkAvailability}
+			class:input-error={!isValid && isTouched}
+			class:input-warning={isTaken}
+			class:input-success={isAvailable && isValid && !loading}
+		/>
 
-		<p>Is available? {isAvailable}</p>
+		<div class="w-full px-8 my-4 min-h-16">
+			{#if loading}
+				<p class="text-secondary">Checking availability of @{username}...</p>
+			{/if}
 
-		<button class="btn btn-success">Confirm username @{username} </button>
+			{#if !isValid && isTouched && !loading}
+				<p class="text-sm text-error">must be 3-16 characters long, alphanumeric only</p>
+			{/if}
+
+			{#if isValid && !isAvailable && !loading}
+				<p class="text-sm text-warning">
+					@{username} is not available
+				</p>
+			{/if}
+
+			{#if isAvailable && isValid && isTouched}
+				<button class="btn btn-success">Confirm username @{username} </button>
+			{/if}
+		</div>
 	</form>
 </AuthCheck>
