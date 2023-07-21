@@ -27,7 +27,7 @@
 	<form class="w-full max-w-screen-md">
 		<div class="w-full max-w-xs mx-auto my-10 text-center form-control">
 			<img
-				src={previewURL ?? $userData?.photoURL ?? ""}
+				src={previewURL ?? $userData?.photoURL ?? "/user.png"}
 				alt="photoURL"
 				width="256"
 				height="256"
