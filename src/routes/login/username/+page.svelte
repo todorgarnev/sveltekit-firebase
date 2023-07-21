@@ -1,7 +1,7 @@
 <script lang="ts">
 	import AuthCheck from "$lib/components/AuthCheck.svelte";
-	import { db, user } from "$lib/firebase";
 	import { doc, getDoc, writeBatch } from "firebase/firestore";
+	import { db, user } from "$lib/firebase";
 
 	let username: string = "";
 	let loading: boolean = false;
@@ -9,10 +9,9 @@
 	let debounceTimer: NodeJS.Timeout;
 
 	const checkAvailability = async () => {
+		loading = true;
 		isAvailable = false;
 		clearTimeout(debounceTimer);
-
-		loading = true;
 
 		debounceTimer = setTimeout(async () => {
 			const ref = doc(db, "usernames", username);
@@ -24,7 +23,27 @@
 	};
 
 	const confirmUsername = async () => {
-		// TODO
+		const batch = writeBatch(db);
+
+		batch.set(doc(db, "usernames", username), {uid: $user?.uid});
+		batch.set(doc(db, "users", $user!.uid), {
+			username,
+			photoURL: $user?.photoURL ?? null,
+			published: true,
+			bio: "I am the Walrus",
+			links: [
+				{
+					title: "Test Link",
+					url: "https://abv.bg",
+					icon: "custom"
+				}
+			]
+		});
+
+		await batch.commit();
+
+		username = "";
+		isAvailable = false;
 	};
 </script>
 
