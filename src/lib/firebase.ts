@@ -20,7 +20,7 @@ export const db = getFirestore();
 export const auth = getAuth();
 export const storage = getStorage();
 
-function userStore() {
+const userStore = () => {
 	let unsubscribe: () => void;
 
 	if (!auth || !globalThis.window) {
@@ -42,7 +42,7 @@ function userStore() {
 	return {
 		subscribe
 	};
-}
+};
 
 export const user = userStore();
 
